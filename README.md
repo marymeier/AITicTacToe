@@ -12,3 +12,8 @@ The program features two players:
 2. A 3-in-a-row can be formed horizontally, vertically, or diagonally.
 3. The game ends when there is only one open space remaining.
 4. The winner is the player with the most 3-in-a-row combinations.
+
+## Setup and Installation
+1. Ensure you have Python 3.7+ installed on your machine.
+2. Clone this repository or download the program files.
+3. Run the program using: '''python tictactoe5x5.py'''
