@@ -16,4 +16,4 @@ The program features two players:
 ## Setup and Installation
 1. Ensure you have Python 3.7+ installed on your machine.
 2. Clone this repository or download the program files.
-3. Run the program using: ''' python tictactoe5x5.py '''
+3. Run the program using: ``` python Tic_Tac_Toe_5x5.py ```
