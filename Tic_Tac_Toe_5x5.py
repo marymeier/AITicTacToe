@@ -1,56 +1,70 @@
-//DRAFT DRAFT DRAFT
-
-
-//Board Initialization**: The board is a 5x5 grid.
-//Gameplay**: Players take turns placing 'X' and 'O' on the board until only one position is left.
-//Winning Condition**: The player with the most 3-in-a-row sequences wins.
-//Alpha-Beta Pruning**: The AI uses alpha-beta pruning to make optimal moves, focusing on creating 3-in-a-row sequences and switching to defense when necessary.
-
-
-
-
 import random
+from collections import defaultdict
 
-# Initialize the board
-board = [[' ' for _ in range(5)] for _ in range(5)]
+class Board(defaultdict):
+    """A board has the player to move, a cached utility value, 
+    and a dict of {(x, y): player} entries, where player is 'X' or 'O'.
+    This is being used from our class lessons."""
+    empty = '.'
+    off = '#'
+    
+    def __init__(self, width=5, height=5, to_move='X', scores=None, **kwds):
+        self.__dict__.update(width=width, height=height, to_move=to_move, scores=scores or {'X': 0, 'O': 0}, **kwds)
+        
+    def new(self, changes: dict, **kwds) -> 'Board':
+        "Given a dict of {(x, y): contents} changes, return a new Board with the changes."
+        board = Board(width=self.width, height=self.height, **kwds)
+        board.update(self)
+        board.update(changes)
+        return board
 
-# Function to print the board
+    def __missing__(self, loc):
+        x, y = loc
+        if 0 <= x < self.width and 0 <= y < self.height:
+            return self.empty
+        else:
+            return self.off
+            
+    def __hash__(self): 
+        return hash(tuple(sorted(self.items()))) + hash(self.to_move)
+    
+    def __repr__(self):
+        def row(y): return ' '.join(self[x, y] for x in range(self.width))
+        return '\n'.join(map(row, range(self.height))) + '\n'
+
+# Print the 5x5 tic-tac-toe board
 def print_board(board):
-    for row in board:
-        print('|'.join(row))
-        print('-' * 9)
+    print(board)
 
-# Function to check for 3-in-a-row
+# Check for 3-in-a-row
 def check_three_in_a_row(board, player):
     count = 0
     # Check rows
-    for row in board:
-        if row.count(player) == 3 and row.count(' ') == 2:
-            count += 1
+    for r in range(board.height):
+        row = [board[c, r] for c in range(board.width)]
+        count += sum(1 for i in range(len(row) - 2) if row[i:i+3] == [player] * 3)
     # Check columns
-    for col in range(5):
-        column = [board[row][col] for row in range(5)]
-        if column.count(player) == 3 and column.count(' ') == 2:
-            count += 1
+    for c in range(board.width):
+        column = [board[c, r] for r in range(board.height)]
+        count += sum(1 for i in range(len(column) - 2) if column[i:i+3] == [player] * 3)
     # Check diagonals
     diagonals = [
-        [board[i][i] for i in range(5)],
-        [board[i][4-i] for i in range(5)]
+        [board[i, i] for i in range(board.width)],        # Top-left to bottom-right
+        [board[i, board.width - 1 - i] for i in range(board.width)]  # Top-right to bottom-left
     ]
     for diag in diagonals:
-        if diag.count(player) == 3 and diag.count(' ') == 2:
-            count += 1
+        count += sum(1 for i in range(len(diag) - 2) if diag[i:i+3] == [player] * 3)
     return count
 
-# Function to check if the board is full
+# Check if the board is full
 def is_full(board):
-    return all(cell != ' ' for row in board for cell in row)
+    return all(board[x, y] != board.empty for x in range(board.width) for y in range(board.height))
 
-# Function to get available moves
+# Get available moves
 def get_available_moves(board):
-    return [(r, c) for r in range(5) for c in range(5) if board[r][c] == ' ']
+    return [(x, y) for x in range(board.width) for y in range(board.height) if board[x, y] == board.empty]
 
-# Alpha-beta pruning algorithm
+#Alpha-beta pruning algorithm
 def alpha_beta(board, depth, alpha, beta, maximizing_player):
     if depth == 0 or is_full(board):
         return check_three_in_a_row(board, 'X') - check_three_in_a_row(board, 'O')
@@ -58,10 +72,8 @@ def alpha_beta(board, depth, alpha, beta, maximizing_player):
     if maximizing_player:
         max_eval = float('-inf')
         for move in get_available_moves(board):
-            r, c = move
-            board[r][c] = 'X'
-            eval = alpha_beta(board, depth-1, alpha, beta, False)
-            board[r][c] = ' '
+            new_board = board.new({move: 'X'})
+            eval = alpha_beta(new_board, depth-1, alpha, beta, False)
             max_eval = max(max_eval, eval)
             alpha = max(alpha, eval)
             if beta <= alpha:
@@ -70,25 +82,21 @@ def alpha_beta(board, depth, alpha, beta, maximizing_player):
     else:
         min_eval = float('inf')
         for move in get_available_moves(board):
-            r, c = move
-            board[r][c] = 'O'
-            eval = alpha_beta(board, depth-1, alpha, beta, True)
-            board[r][c] = ' '
+            new_board = board.new({move: 'O'})
+            eval = alpha_beta(new_board, depth-1, alpha, beta, True)
             min_eval = min(min_eval, eval)
             beta = min(beta, eval)
             if beta <= alpha:
                 break
         return min_eval
 
-# Function to make the best move using alpha-beta pruning
+# Find the best move using alpha-beta pruning
 def best_move(board):
     best_val = float('-inf')
     best_move = None
     for move in get_available_moves(board):
-        r, c = move
-        board[r][c] = 'X'
-        move_val = alpha_beta(board, 3, float('-inf'), float('inf'), False)
-        board[r][c] = ' '
+        new_board = board.new({move: 'X'})
+        move_val = alpha_beta(new_board, 3, float('-inf'), float('inf'), False)
         if move_val > best_val:
             best_val = move_val
             best_move = move
@@ -96,23 +104,30 @@ def best_move(board):
 
 # Main game loop
 def play_game():
-    current_player = 'X'
-    
-    while not is_full(board):
-        print_board(board)
-        
-        if current_player == 'X':
-            r, c = best_move(board)
-        else:
-            available_moves = get_available_moves(board)
-            r, c = random.choice(available_moves)
-        
-        board[r][c] = current_player
-        
-        current_player = 'O' if current_player == 'X' else 'X'
-    
+    board = Board(width=5, height=5, to_move='X')
     print_board(board)
     
+    while not is_full(board):
+        if board.to_move == 'O':  # User's turn
+            while True:
+                try:
+                    user_input = input("Player O move: ")
+                    move = tuple(map(int, user_input.strip("()").split(',')))
+                    if move in get_available_moves(board):
+                        board = board.new({move: 'O'}, to_move='X')
+                        break
+                    print("Invalid move. Try again.")
+                except ValueError:
+                    print("Invalid format. Enter as 'row,col'.")
+            print(f"Player O move: {move}.")
+        else:  # AI's turn
+            move = best_move(board)
+            print(f"Player X move: {move}.")
+            board = board.new({move: 'X'}, to_move='O')
+        
+        print_board(board)
+    
+    # Game over, calculate scores
     x_score = check_three_in_a_row(board, 'X')
     o_score = check_three_in_a_row(board, 'O')
     
@@ -120,13 +135,11 @@ def play_game():
     print(f"O's score: {o_score}")
     
     if x_score > o_score:
-        print("X wins!")
+        print("AI wins!")
     elif o_score > x_score:
-        print("O wins!")
+        print("You win!")
     else:
         print("It's a tie!")
 
-play_game()
-```
-
-This code sets up the game, handles the turns, and uses alpha-beta pruning to make optimal moves for the AI player. Feel free to run this code and let me know if you have any questions or need further modifications!
+if __name__ == "__main__":
+    play_game()
