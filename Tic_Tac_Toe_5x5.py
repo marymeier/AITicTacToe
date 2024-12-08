@@ -2,9 +2,13 @@ import random
 from collections import defaultdict
 
 class Board(defaultdict):
-    """A board has the player to move, a cached utility value, 
+    """
+    A board has the player to move, a cached utility value, 
     and a dict of {(x, y): player} entries, where player is 'X' or 'O'.
-    This is being used from our class lessons."""
+    This is being used from the games4e.ipynb file in our class lessons with the following changes:
+    - we create a 5x5 board instead of the typical 3x3
+    - scores are tracked for both players
+    """
     empty = '.'
     off = '#'
     
@@ -33,8 +37,7 @@ class Board(defaultdict):
         return '\n'.join(map(row, range(self.height))) + '\n'
 
 # Print the 5x5 tic-tac-toe board
-def print_board(board):
-    print(board)
+def print_board(board): print(board)
 
 # Check for 3-in-a-row
 def check_three_in_a_row(board, player):
@@ -60,18 +63,20 @@ def check_three_in_a_row(board, player):
 def is_full(board):
     return all(board[x, y] != board.empty for x in range(board.width) for y in range(board.height))
 
-# Get available moves
+# Get a list of available moves on the board
 def get_available_moves(board):
     return [(x, y) for x in range(board.width) for y in range(board.height) if board[x, y] == board.empty]
 
-#Alpha-beta pruning algorithm
+# Alpha-beta pruning algorithm
 def alpha_beta(board, depth, alpha, beta, maximizing_player):
+    # If depth=0 or the board is full, evaluate the board
     if depth == 0 or is_full(board):
         return check_three_in_a_row(board, 'X') - check_three_in_a_row(board, 'O')
     
     if maximizing_player:
         max_eval = float('-inf')
         for move in get_available_moves(board):
+            # evaluating moves recursively
             new_board = board.new({move: 'X'})
             eval = alpha_beta(new_board, depth-1, alpha, beta, False)
             max_eval = max(max_eval, eval)
@@ -82,6 +87,7 @@ def alpha_beta(board, depth, alpha, beta, maximizing_player):
     else:
         min_eval = float('inf')
         for move in get_available_moves(board):
+             # evaluating moves recursively
             new_board = board.new({move: 'O'})
             eval = alpha_beta(new_board, depth-1, alpha, beta, True)
             min_eval = min(min_eval, eval)
@@ -102,32 +108,37 @@ def best_move(board):
             best_move = move
     return best_move
 
-# Main game loop
+# Main game loop for the 5x5 Tic Tac Toe game
 def play_game():
+    # Initialize board
     board = Board(width=5, height=5, to_move='X')
     print_board(board)
     
     while not is_full(board):
-        if board.to_move == 'O':  # User's turn
+        if board.to_move == 'O':  
+            # User's turn
             while True:
                 try:
                     user_input = input("Player O move: ")
                     move = tuple(map(int, user_input.strip("()").split(',')))
                     if move in get_available_moves(board):
+                        # applying the move to the board
                         board = board.new({move: 'O'}, to_move='X')
                         break
                     print("Invalid move. Try again.")
                 except ValueError:
                     print("Invalid format. Enter as 'row,col'.")
             print(f"Player O move: {move}.")
-        else:  # AI's turn
+        else:  
+            # AI's turn
             move = best_move(board)
             print(f"Player X move: {move}.")
+            # applying the move to the board
             board = board.new({move: 'X'}, to_move='O')
         
         print_board(board)
     
-    # Game over, calculate scores
+    # Game over, calculate and display final scores
     x_score = check_three_in_a_row(board, 'X')
     o_score = check_three_in_a_row(board, 'O')
     
