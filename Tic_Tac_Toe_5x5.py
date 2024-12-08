@@ -1,5 +1,7 @@
-import random
 from collections import defaultdict
+import math
+
+infinity = math.inf
 
 class Board(defaultdict):
     """
@@ -36,87 +38,108 @@ class Board(defaultdict):
         def row(y): return ' '.join(self[x, y] for x in range(self.width))
         return '\n'.join(map(row, range(self.height))) + '\n'
 
-# Print the 5x5 tic-tac-toe board
+#Print the 5x5 tic-tac-toe board
 def print_board(board): print(board)
 
-# Check for 3-in-a-row
+#Check for 3-in-a-row
 def check_three_in_a_row(board, player):
     count = 0
-    # Check rows
+    #check rows
     for r in range(board.height):
         row = [board[c, r] for c in range(board.width)]
         count += sum(1 for i in range(len(row) - 2) if row[i:i+3] == [player] * 3)
-    # Check columns
+    
+    #check columns
     for c in range(board.width):
         column = [board[c, r] for r in range(board.height)]
         count += sum(1 for i in range(len(column) - 2) if column[i:i+3] == [player] * 3)
-    # Check diagonals
+   
+    #check diagonals
     diagonals = [
-        [board[i, i] for i in range(board.width)],        # Top-left to bottom-right
-        [board[i, board.width - 1 - i] for i in range(board.width)]  # Top-right to bottom-left
+        #top-left to bottom-right
+        [board[i, i] for i in range(board.width)],        
+        #top-right to bottom-left
+        [board[i, board.width - 1 - i] for i in range(board.width)]  
     ]
+    
     for diag in diagonals:
         count += sum(1 for i in range(len(diag) - 2) if diag[i:i+3] == [player] * 3)
     return count
 
-# Check if the board is full
+#Check if the board is full
 def is_full(board):
     return all(board[x, y] != board.empty for x in range(board.width) for y in range(board.height))
 
-# Get a list of available moves on the board
+#Get available moves
 def get_available_moves(board):
-    return [(x, y) for x in range(board.width) for y in range(board.height) if board[x, y] == board.empty]
+    #returning a list of all empty positions on the board."""
+    available_moves = []
+    
+    for x in range(board.width):
+        for y in range(board.height):
+            if board[x, y] == board.empty:  #checking if position is empty
+                available_moves.append((x, y))
+    return available_moves
 
-# Alpha-beta pruning algorithm
+#Alpha-beta pruning algorithm
 def alpha_beta(board, depth, alpha, beta, maximizing_player):
-    # If depth=0 or the board is full, evaluate the board
-    if depth == 0 or is_full(board):
+    if depth == 0 or is_full(board): #terminal state
+        #if terminal state is reached, return the final score
         return check_three_in_a_row(board, 'X') - check_three_in_a_row(board, 'O')
     
-    if maximizing_player:
-        max_eval = float('-inf')
+    if maximizing_player: #'X'
+        max_eval = -infinity #starting with the lowest possible value
         for move in get_available_moves(board):
-            # evaluating moves recursively
             new_board = board.new({move: 'X'})
+            #create a new board with X making the move, recursively call alpha-beta, decreasing the depth and minimizing the player's turn
             eval = alpha_beta(new_board, depth-1, alpha, beta, False)
+            #updating max_eval to be the higher value
             max_eval = max(max_eval, eval)
+            #alpha=best value for the maximizing player
             alpha = max(alpha, eval)
+            #pruning: break the loop early if beta <= alpha bc further moves won't affect the final move result
             if beta <= alpha:
                 break
         return max_eval
-    else:
-        min_eval = float('inf')
+    else: #'O'
+        min_eval = infinity #starting with the highest possible value
         for move in get_available_moves(board):
-             # evaluating moves recursively
             new_board = board.new({move: 'O'})
+            #create a new board with O making the move, recursively call alpha-beta, decreasing the depth and maximizing the player's turn
             eval = alpha_beta(new_board, depth-1, alpha, beta, True)
+            #updating min_eval to be lower value
             min_eval = min(min_eval, eval)
+            #beta=best value for minimizing player
             beta = min(beta, eval)
             if beta <= alpha:
                 break
         return min_eval
 
-# Find the best move using alpha-beta pruning
+#Find the best move using alpha-beta pruning
 def best_move(board):
-    best_val = float('-inf')
+    best_val = -infinity
     best_move = None
+    
     for move in get_available_moves(board):
+        #looping through each available move, making a new board based on current move
         new_board = board.new({move: 'X'})
-        move_val = alpha_beta(new_board, 3, float('-inf'), float('inf'), False)
+        #use alpha-beta to evaluate new board after move is made
+        move_val = alpha_beta(new_board, 3, -infinity, infinity, False)
+        #if move results in better score, update best_val and set best_move to current move
         if move_val > best_val:
             best_val = move_val
             best_move = move
     return best_move
 
-# Main game loop for the 5x5 Tic Tac Toe game
+#Main game loop for the 5x5 Tic Tac Toe game
 def play_game():
-    # Initialize board
+    #initialize board
     board = Board(width=5, height=5, to_move='X')
     print_board(board)
     
     while not is_full(board):
         if board.to_move == 'O':  
-            # User's turn
+            #user's turn
             while True:
                 try:
                     user_input = input("Player O move: ")
@@ -130,15 +153,18 @@ def play_game():
                     print("Invalid format. Enter as 'row,col'.")
             print(f"Player O move: {move}.")
         else:  
-            # AI's turn
+            #AI's turn
             move = best_move(board)
             print(f"Player X move: {move}.")
-            # applying the move to the board
+            #applying the move to the board
             board = board.new({move: 'X'}, to_move='O')
         
         print_board(board)
     
-    # Game over, calculate and display final scores
+    #game ends with 1 space remaining
+    print("Game over! Only one space left.")
+    
+    #calculate and print final scores
     x_score = check_three_in_a_row(board, 'X')
     o_score = check_three_in_a_row(board, 'O')
     

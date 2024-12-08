@@ -1,13 +1,16 @@
 import math
-import random
 from collections import defaultdict
 
 infinity = math.inf
 
 class Board(defaultdict):
-    """A board has the player to move, a cached utility value, 
+    """
+    A board has the player to move, a cached utility value, 
     and a dict of {(x, y): player} entries, where player is 'X' or 'O'.
-    This is being used from our class lessons."""
+    This is being used from the games4e.ipynb file in our class lessons with the following changes:
+    - we create a 5x5 board instead of the typical 3x3
+    - scores are tracked for both players
+    """
     empty = '.'
     off = '#'
     
@@ -114,19 +117,18 @@ def alpha_beta(board, depth, alpha, beta, maximizing_player):
         return min_eval
 
 #Find the best move using alpha-beta pruning
-def ab_best_move(board, player):
-    #if X's turn, initial best val is very low bc we want to maximize the score
-    #if O's turn, initial best val is very high bc we want to minimize the score
-    best_val = -infinity if player == 'X' else infinity
+def ab_best_move(board):
+    #initial best val is very low bc we want to maximize the score
+    best_val = -infinity
     best_move = None
     
     for move in get_available_moves(board):
         #looping through each available move, making a new board based on current move
-        new_board = board.new({move: player})
+        new_board = board.new({move: 'X'})
         #use alpha-beta to evaluate new board after move is made
-        move_val = alpha_beta(new_board, 3, -infinity, infinity, player == 'O')
+        move_val = alpha_beta(new_board, 3, -infinity, infinity, False)
         #if move results in better score, update best_val and set best_move to current move
-        if (player == 'X' and move_val > best_val) or (player == 'O' and move_val < best_val):
+        if move_val > best_val:
             best_val = move_val
             best_move = move
     return best_move
@@ -153,19 +155,18 @@ def minimax(board, depth, maximizing_player):
             min_eval = min(min_eval, eval)
         return min_eval
 
-def minimax_best_move(board, player):
+def minimax_best_move(board):
     best_move = None
-    best_val = -infinity if player == 'X' else infinity
+    best_val = infinity
 
     for move in get_available_moves(board):
-        new_board = board.new({move: player})
+        new_board = board.new({move: 'O'})
         #evaluate move using minimax
-        move_val = minimax(new_board, 3, player == 'O')
-        if (player == 'X' and move_val > best_val) or (player == 'O' and move_val < best_val):
+        move_val = minimax(new_board, 3, True)
+        if move_val < best_val:
             best_val = move_val
             best_move = move
 
-    print(f"Best move for {player}: {best_move}")
     return best_move
 
 # Main game loop for two AI players
@@ -182,12 +183,11 @@ def play_game():
     while sum(1 for x in range(board.width) for y in range(board.height) if board[x, y] == board.empty) > 1:
         if board.to_move == 'X':  
             #player X (alpha-beta pruning)
-            move = ab_best_move(board, 'X')
+            move = ab_best_move(board)
         else:  
             #player O (minimax)
-            move = minimax_best_move(board, 'O')
+            move = minimax_best_move(board)
             
-        print(f"Player {board.to_move} considering move: {move}")
         print(f"Player {board.to_move} move: {move}.")
         board = board.new({move: board.to_move}, to_move='O' if board.to_move == 'X' else 'X')
         print_board(board)
