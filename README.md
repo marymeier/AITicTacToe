@@ -5,6 +5,7 @@ This is an advanced Tic Tac Toe game: instead of just achieving one 3-in-a-row, 
 The program features two players:
 
 **Query Player (Human player):** You make decisions manually for your moves, given the remaining open spots on the board.
+
 **Alpha-Beta AI Player:** A computer opponent that uses alpha-beta pruning to efficiently determine optimal moves.
 
 ## Rules
