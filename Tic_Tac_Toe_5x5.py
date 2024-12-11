@@ -137,7 +137,7 @@ def play_game():
     board = Board(width=5, height=5, to_move='X')
     print_board(board)
     
-    while not is_full(board):
+    while sum(1 for x in range(board.width) for y in range(board.height) if board[x, y] == board.empty) > 1:
         if board.to_move == 'O':  
             #user's turn
             while True:
